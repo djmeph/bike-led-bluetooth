@@ -3,26 +3,24 @@
 #include <FastLED.h>
 #include <elapsedMillis.h>
 
+#define BUTTON_LED_PIN          25
+#define BUTTON_PIN              32
 #define CH1_PIN                 12
-#define CH2_PIN                 18
-#define CH1_LEDS_PER_CHANNEL    45
-#define CH2_LEDS_PER_CHANNEL    8
+#define CH2_PIN                 27
+#define LEDS_PER_CHANNEL        82
 #define BRIGHTNESS              32
-#define LED_TYPE                WS2812
+#define UPDATES_PER_SECOND      100
+#define LED_TYPE                WS2811
 #define COLOR_ORDER             GRB
 
-CRGB          ch1Leds[CH1_LEDS_PER_CHANNEL];
-CRGB          ch2Leds[CH2_LEDS_PER_CHANNEL];
+CRGB          ch1Leds[LEDS_PER_CHANNEL];
+CRGB          ch2Leds[LEDS_PER_CHANNEL];
 CRGBPalette16 currentPalette;
 TBlendType    currentBlending;
 BluetoothSerial SerialBT;
 byte BTData;
-
-elapsedMillis fps;
-float monoPeak = 0.0;
-int ch1PeakValue = 0;
-int ch2PeakValue = 0;
-int i = 0;
+byte currentSetting;
+byte lastSetting;
 uint8_t brightness = 255;
 
 /* Check if Bluetooth configurations are enabled in the SDK */
@@ -31,55 +29,83 @@ uint8_t brightness = 255;
 #endif
 
 void light(uint8_t colorIndex) {
-  for (i = 0; i < CH1_LEDS_PER_CHANNEL; i++) {
+  for (int i = 0; i < LEDS_PER_CHANNEL; i++) {
     ch1Leds[i] = ColorFromPalette(currentPalette, colorIndex, brightness, currentBlending);
-  }
-  for (i = 0; i < CH2_LEDS_PER_CHANNEL; i++) {
     ch2Leds[i] = ColorFromPalette(currentPalette, colorIndex, brightness, currentBlending);
+    colorIndex += 3;
   }
-  FastLED.show();
+}
+
+void dark() {
+  for (int i = 0; i < LEDS_PER_CHANNEL; i++) {
+    ch1Leds[i] = CRGB::Black;
+    ch1Leds[i] = CRGB::Black;
+  }
 }
 
 void setup() {
-  FastLED.addLeds<LED_TYPE, CH1_PIN, COLOR_ORDER>(ch1Leds, CH1_LEDS_PER_CHANNEL);
-  FastLED.addLeds<LED_TYPE, CH2_PIN, COLOR_ORDER>(ch2Leds, CH2_LEDS_PER_CHANNEL);
-  FastLED.setBrightness(BRIGHTNESS);
-  currentPalette = LavaColors_p;
-  currentBlending = LINEARBLEND;
-  delay(1000);
   Serial.begin(9600);
-  SerialBT.begin();
+  SerialBT.begin("UnicornCycle");
   Serial.println("Bluetooth Started! Ready to pair...");
+  pinMode(BUTTON_LED_PIN, OUTPUT);
+  digitalWrite(BUTTON_LED_PIN, HIGH);
+  delay(1000);
+  FastLED.addLeds<LED_TYPE, CH1_PIN, COLOR_ORDER>(ch1Leds, LEDS_PER_CHANNEL).setCorrection( TypicalLEDStrip );
+  FastLED.addLeds<LED_TYPE, CH2_PIN, COLOR_ORDER>(ch2Leds, LEDS_PER_CHANNEL).setCorrection( TypicalLEDStrip );
+  FastLED.setBrightness(BRIGHTNESS);
+  currentSetting = '1';
 }
 
 void loop() {
   if(SerialBT.available()) {
     BTData = SerialBT.read();
-    Serial.write(BTData);
+    if (BTData) {
+      currentSetting = BTData;
+    }
   }
 
-  switch (BTData) {
-    case '1':
-    currentPalette = LavaColors_p;
-    break;
-    case '2':
-    currentPalette = RainbowColors_p;
-    break;
-    case '3':
-    currentPalette = CloudColors_p;
-    break;
-    case '4':
-    currentPalette = OceanColors_p;
-    break;
-    case '5':
-    currentPalette = ForestColors_p;
-    break;
-    case '6':
-    currentPalette = PartyColors_p;
-    break;
+  if (currentSetting != lastSetting) {
+    switch (currentSetting) {
+      case '1':
+      currentPalette = LavaColors_p;
+      currentBlending = LINEARBLEND;
+      SerialBT.print("Lava Colors - Linear Blend\n");
+      break;
+      case '2':
+      currentPalette = RainbowColors_p;
+      currentBlending = LINEARBLEND;
+      SerialBT.print("Rainbow Colors - Linear Blend\n");
+      break;
+      case '3':
+      currentPalette = CloudColors_p;
+      currentBlending = NOBLEND;
+      SerialBT.print("Cloud Colors - No Blend\n");
+      break;
+      case '4':
+      currentPalette = OceanColors_p;
+      currentBlending = LINEARBLEND;
+      SerialBT.print("Ocean Colors - Linear Blend\n");
+      break;
+      case '5':
+      currentPalette = ForestColors_p;
+      currentBlending = LINEARBLEND;
+      SerialBT.print("Forest Colors - Linear Blend\n");
+      break;
+      case '6':
+      currentPalette = PartyColors_p;
+      currentBlending = NOBLEND;
+      SerialBT.print("Forest Colors - Linear Blend\n");
+      break;
+    }
   }
+
+  lastSetting = currentSetting;
 
   static uint8_t startIndex = 0;
   startIndex = startIndex + 1;
-  light(startIndex);
+
+  if (currentSetting == '0') dark();
+  else light(startIndex);
+  FastLED.show();
+  FastLED.delay(1000 / UPDATES_PER_SECOND);
 }
