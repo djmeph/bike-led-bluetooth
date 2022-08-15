@@ -1,7 +1,6 @@
 #include <Arduino.h>
 #include <BluetoothSerial.h>
 #include <FastLED.h>
-#include <elapsedMillis.h>
 #include <Bounce2.h>
 
 #define BUTTON_LED_PIN          25
