@@ -13,16 +13,16 @@
 #define LED_TYPE                WS2811
 #define COLOR_ORDER             GRB
 
-CRGB          ch1Leds[LEDS_PER_CHANNEL];
-CRGB          ch2Leds[LEDS_PER_CHANNEL];
-CRGBPalette16 currentPalette;
-TBlendType    currentBlending;
+CRGB            ch1Leds[LEDS_PER_CHANNEL];
+CRGB            ch2Leds[LEDS_PER_CHANNEL];
+CRGBPalette16   currentPalette;
+TBlendType      currentBlending;
 BluetoothSerial SerialBT;
-Bounce bounce = Bounce();
-byte BTData;
-byte currentSetting;
-byte lastSetting;
-uint8_t brightness = 255;
+Bounce          bounce = Bounce();
+byte            BTData;
+byte            currentSetting;
+byte            lastSetting;
+uint8_t         brightness = 255;
 
 /* Check if Bluetooth configurations are enabled in the SDK */
 #if !defined(CONFIG_BT_ENABLED) || !defined(CONFIG_BLUEDROID_ENABLED)
