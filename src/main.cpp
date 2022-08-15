@@ -2,6 +2,7 @@
 #include <BluetoothSerial.h>
 #include <FastLED.h>
 #include <elapsedMillis.h>
+#include <Bounce2.h>
 
 #define BUTTON_LED_PIN          25
 #define BUTTON_PIN              32
@@ -18,6 +19,7 @@ CRGB          ch2Leds[LEDS_PER_CHANNEL];
 CRGBPalette16 currentPalette;
 TBlendType    currentBlending;
 BluetoothSerial SerialBT;
+Bounce bounce = Bounce();
 byte BTData;
 byte currentSetting;
 byte lastSetting;
@@ -39,7 +41,7 @@ void light(uint8_t colorIndex) {
 void dark() {
   for (int i = 0; i < LEDS_PER_CHANNEL; i++) {
     ch1Leds[i] = CRGB::Black;
-    ch1Leds[i] = CRGB::Black;
+    ch2Leds[i] = CRGB::Black;
   }
 }
 
@@ -49,6 +51,8 @@ void setup() {
   Serial.println("Bluetooth Started! Ready to pair...");
   pinMode(BUTTON_LED_PIN, OUTPUT);
   digitalWrite(BUTTON_LED_PIN, HIGH);
+  bounce.attach( BUTTON_PIN ,  INPUT_PULLUP );
+  bounce.interval(10);
   delay(1000);
   FastLED.addLeds<LED_TYPE, CH1_PIN, COLOR_ORDER>(ch1Leds, LEDS_PER_CHANNEL).setCorrection( TypicalLEDStrip );
   FastLED.addLeds<LED_TYPE, CH2_PIN, COLOR_ORDER>(ch2Leds, LEDS_PER_CHANNEL).setCorrection( TypicalLEDStrip );
@@ -57,10 +61,50 @@ void setup() {
 }
 
 void loop() {
+  bounce.update();
+
+  if (bounce.changed()) {
+    int deboucedInput = bounce.read();
+
+    if ( deboucedInput == HIGH ) {
+      switch (currentSetting) {
+        case '1':
+        currentSetting = '2';
+        break;
+        case '2':
+        currentSetting = '3';
+        break;
+        case '3':
+        currentSetting = '4';
+        break;
+        case '4':
+        currentSetting = '5';
+        break;
+        case '5':
+        currentSetting = '6';
+        break;
+        case '6':
+        currentSetting = '0';
+        break;
+        case '0':
+        currentSetting = '1';
+        break;
+      }
+    }
+  }
+
   if(SerialBT.available()) {
     BTData = SerialBT.read();
     if (BTData) {
-      currentSetting = BTData;
+      if (
+        BTData == '1' ||
+        BTData == '2' ||
+        BTData == '3' ||
+        BTData == '4' ||
+        BTData == '5' ||
+        BTData == '6' ||
+        BTData == '0'
+      ) currentSetting = BTData;
     }
   }
 
@@ -94,18 +138,20 @@ void loop() {
       case '6':
       currentPalette = PartyColors_p;
       currentBlending = NOBLEND;
-      SerialBT.print("Forest Colors - Linear Blend\n");
+      SerialBT.print("Party Colors - No Blend\n");
       break;
     }
   }
 
-  lastSetting = currentSetting;
-
   static uint8_t startIndex = 0;
   startIndex = startIndex + 1;
 
+  if (currentSetting == '0' && currentSetting != lastSetting) SerialBT.print("Off\n");
   if (currentSetting == '0') dark();
   else light(startIndex);
+
+  lastSetting = currentSetting;
+
   FastLED.show();
   FastLED.delay(1000 / UPDATES_PER_SECOND);
 }
