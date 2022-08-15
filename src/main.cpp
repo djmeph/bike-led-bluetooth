@@ -17,9 +17,9 @@ CRGB            ch1Leds[LEDS_PER_CHANNEL];
 CRGB            ch2Leds[LEDS_PER_CHANNEL];
 CRGBPalette16   currentPalette;
 TBlendType      currentBlending;
-BluetoothSerial SerialBT;
+BluetoothSerial serialBT;
 Bounce          bounce = Bounce();
-byte            BTData;
+byte            bTData;
 byte            currentSetting;
 byte            lastSetting;
 uint8_t         brightness = 255;
@@ -46,15 +46,15 @@ void dark() {
 
 void setup() {
   Serial.begin(9600);
-  SerialBT.begin("UnicornCycle");
+  serialBT.begin("UnicornCycle");
   Serial.println("Bluetooth Started! Ready to pair...");
   pinMode(BUTTON_LED_PIN, OUTPUT);
   digitalWrite(BUTTON_LED_PIN, HIGH);
-  bounce.attach( BUTTON_PIN ,  INPUT_PULLUP );
+  bounce.attach(BUTTON_PIN, INPUT_PULLUP);
   bounce.interval(10);
   delay(1000);
-  FastLED.addLeds<LED_TYPE, CH1_PIN, COLOR_ORDER>(ch1Leds, LEDS_PER_CHANNEL).setCorrection( TypicalLEDStrip );
-  FastLED.addLeds<LED_TYPE, CH2_PIN, COLOR_ORDER>(ch2Leds, LEDS_PER_CHANNEL).setCorrection( TypicalLEDStrip );
+  FastLED.addLeds<LED_TYPE, CH1_PIN, COLOR_ORDER>(ch1Leds, LEDS_PER_CHANNEL).setCorrection(TypicalLEDStrip);
+  FastLED.addLeds<LED_TYPE, CH2_PIN, COLOR_ORDER>(ch2Leds, LEDS_PER_CHANNEL).setCorrection(TypicalLEDStrip);
   FastLED.setBrightness(BRIGHTNESS);
   currentSetting = '1';
 }
@@ -92,18 +92,18 @@ void loop() {
     }
   }
 
-  if(SerialBT.available()) {
-    BTData = SerialBT.read();
-    if (BTData) {
+  if(serialBT.available()) {
+    bTData = serialBT.read();
+    if (bTData) {
       if (
-        BTData == '1' ||
-        BTData == '2' ||
-        BTData == '3' ||
-        BTData == '4' ||
-        BTData == '5' ||
-        BTData == '6' ||
-        BTData == '0'
-      ) currentSetting = BTData;
+        bTData == '1' ||
+        bTData == '2' ||
+        bTData == '3' ||
+        bTData == '4' ||
+        bTData == '5' ||
+        bTData == '6' ||
+        bTData == '0'
+      ) currentSetting = bTData;
     }
   }
 
@@ -112,32 +112,32 @@ void loop() {
       case '1':
       currentPalette = LavaColors_p;
       currentBlending = LINEARBLEND;
-      SerialBT.print("Lava Colors - Linear Blend\n");
+      serialBT.print("Lava Colors - Linear Blend\n");
       break;
       case '2':
       currentPalette = RainbowColors_p;
       currentBlending = LINEARBLEND;
-      SerialBT.print("Rainbow Colors - Linear Blend\n");
+      serialBT.print("Rainbow Colors - Linear Blend\n");
       break;
       case '3':
       currentPalette = CloudColors_p;
       currentBlending = NOBLEND;
-      SerialBT.print("Cloud Colors - No Blend\n");
+      serialBT.print("Cloud Colors - No Blend\n");
       break;
       case '4':
       currentPalette = OceanColors_p;
       currentBlending = LINEARBLEND;
-      SerialBT.print("Ocean Colors - Linear Blend\n");
+      serialBT.print("Ocean Colors - Linear Blend\n");
       break;
       case '5':
       currentPalette = ForestColors_p;
       currentBlending = LINEARBLEND;
-      SerialBT.print("Forest Colors - Linear Blend\n");
+      serialBT.print("Forest Colors - Linear Blend\n");
       break;
       case '6':
       currentPalette = PartyColors_p;
       currentBlending = NOBLEND;
-      SerialBT.print("Party Colors - No Blend\n");
+      serialBT.print("Party Colors - No Blend\n");
       break;
     }
   }
@@ -145,7 +145,7 @@ void loop() {
   static uint8_t startIndex = 0;
   startIndex = startIndex + 1;
 
-  if (currentSetting == '0' && currentSetting != lastSetting) SerialBT.print("Off\n");
+  if (currentSetting == '0' && currentSetting != lastSetting) serialBT.print("Off\n");
   if (currentSetting == '0') dark();
   else light(startIndex);
 
